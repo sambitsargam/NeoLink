@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 NeoLink DeFi WhatsApp Agent - Main Application
-Flask server handling Twilio WhatsApp webhooks with enhanced conversational DeFi agent
+Flask server handling Twilio WhatsApp webhooks with conversational DeFi agent
 """
 
 from flask import Flask, request, jsonify
@@ -15,8 +15,8 @@ import logging
 # Load environment variables
 load_dotenv()
 
-# Import our enhanced conversational agent with real data
-from enhanced_defi_agent import create_enhanced_agent
+# Import our conversational agent with real data
+from defi_whatsapp_agent import create_neolink_agent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,10 +34,10 @@ twilio_client = Client(
 defi_agent = None
 
 async def get_agent():
-    """Get or create the enhanced conversational DeFi agent"""
+    """Get or create the conversational DeFi agent"""
     global defi_agent
     if defi_agent is None:
-        defi_agent = await create_enhanced_agent()
+        defi_agent = await create_neolink_agent()
     return defi_agent
 
 @app.route('/webhook', methods=['POST'])
@@ -50,7 +50,7 @@ def whatsapp_webhook():
         
         logger.info(f"Received message from {from_number}: {message_body}")
         
-        # Process the message through our enhanced DeFi agent (async)
+        # Process the message through our DeFi agent (async)
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:

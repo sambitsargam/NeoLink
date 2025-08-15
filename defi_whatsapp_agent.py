@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 NeoLink DeFi WhatsApp Agent - Spoon AI Implementation
-Enhanced conversational DeFi assistant with Spoon AI SDK integration
+Conversational DeFi assistant with Spoon AI SDK integration and Neo blockchain focus
 """
 
 import os
@@ -297,7 +297,7 @@ class RealDataService:
             return {'safe': 15, 'standard': 20, 'fast': 25}
 
 class NeoLinkSpoonAgent(SpoonReactMCP):
-    """Enhanced DeFi agent using Spoon AI SDK with Neo Chain focus"""
+    """DeFi WhatsApp agent using Spoon AI SDK with Neo blockchain focus"""
     
     def __init__(self):
         # Initialize SpoonReactMCP with OpenRouter configuration
@@ -328,7 +328,7 @@ focus on that specific token and provide current market data."""
         self.user_wallets = {}  # Store user wallet addresses
     
     async def process_whatsapp_message(self, user_phone: str, message: str) -> str:
-        """Process WhatsApp message using Spoon AI with enhanced crypto context"""
+        """Process WhatsApp message using Spoon AI with crypto context"""
         try:
             logger.info(f"Processing message from {user_phone}: {message}")
             
@@ -532,10 +532,16 @@ What would you like to explore first? 😄"""
         return None
 
     async def get_ai_response(self, message: str, context: str = "") -> str:
-        """Get enhanced conversational AI response using OpenRouter with crypto intelligence"""
+        """Get conversational AI response using OpenRouter with crypto intelligence"""
         try:
+            # Get API key from environment
+            openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
+            if not openrouter_api_key:
+                logger.error("No OpenRouter API key found")
+                return "I'm having trouble accessing my AI capabilities right now. Try again in a moment! 🤔"
+            
             headers = {
-                "Authorization": f"Bearer {self.openai_api_key}",
+                "Authorization": f"Bearer {openrouter_api_key}",
                 "Content-Type": "application/json"
             }
             
@@ -988,7 +994,7 @@ I'll keep it safe and secure - just between us! 🔒�"""
                 return response
             
             # For all other messages, use Spoon AI's natural conversation with enhanced context
-            context = self.build_enhanced_context(user_wallet, {'token': token} if token else {}, message)
+            context = self.build_crypto_context(user_wallet, {'token': token} if token else {}, message)
             logger.info(f"Using Spoon AI for conversation, context: {context[:100]}...")
             
             # Use OpenRouter as LLM backend through Spoon AI
@@ -1000,8 +1006,8 @@ I'll keep it safe and secure - just between us! 🔒�"""
             logger.error(f"Error processing message: {str(e)}")
             return "Oops! Something went wrong on my end. Could you try that again? I promise I'm usually more reliable than this! 😅"
 
-    def build_enhanced_context(self, user_wallet: str, data: dict, original_message: str) -> str:
-        """Build enhanced context for OpenRouter with token and chain information"""
+    def build_crypto_context(self, user_wallet: str, data: dict, original_message: str) -> str:
+        """Build crypto context for OpenRouter with token and chain information"""
         context_parts = []
         
         # User wallet status
@@ -1026,7 +1032,7 @@ I'll keep it safe and secure - just between us! 🔒�"""
         
         return " | ".join(context_parts)
 
-async def create_enhanced_agent():
+async def create_neolink_agent():
     """Create and initialize the NeoLink Spoon AI agent"""
     try:
         agent = NeoLinkSpoonAgent()
@@ -1037,11 +1043,11 @@ async def create_enhanced_agent():
         raise
 
 # Test function
-async def test_enhanced_agent():
-    """Test the enhanced agent functionality with various intents"""
-    print("🚀 Testing Enhanced Conversational DeFi WhatsApp Agent with Real Data...")
+async def test_neolink_agent():
+    """Test the NeoLink agent functionality with various queries"""
+    print("🚀 Testing NeoLink DeFi WhatsApp Agent with Real Data...")
     
-    agent = await create_enhanced_agent()
+    agent = await create_neolink_agent()
     
     # Test various intents with real API calls
     test_cases = [
@@ -1065,4 +1071,4 @@ async def test_enhanced_agent():
         await asyncio.sleep(3)  # Be respectful to APIs
 
 if __name__ == "__main__":
-    asyncio.run(test_enhanced_agent())
+    asyncio.run(test_neolink_agent())
