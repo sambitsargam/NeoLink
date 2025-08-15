@@ -5,7 +5,7 @@ import os
 import asyncio
 from dotenv import load_dotenv
 import logging
-from simple_agent import create_agent
+from intelligent_agent import create_agent
 
 # Load environment variables
 load_dotenv()
