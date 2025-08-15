@@ -19,7 +19,11 @@ A Python-based DeFi agent built with **Spoon AI SDK** that integrates with Whats
    ```
 
 2. **Configure environment variables:**
-   Update `.env` with your API keys:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your actual API keys and credentials
+   ```
+   Required variables:
    - `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`
    - `OPENAI_API_KEY` (set to your OpenRouter API key)
    - `RPC_URL` (Ethereum RPC endpoint)
@@ -75,13 +79,13 @@ The agent can:
 
 ## Security Notes
 
-- ⚠️ **Private Key Required** - Needed for blockchain operations (balance checks, etc.)
-- 🔐 **Secure Storage** - Store private key securely, never commit to version control
+- 🔐 **Environment Variables Only** - All API keys and secrets stored in .env file
+- ⚠️ **Never Commit Secrets** - .env file is in .gitignore, never commit to version control
+- 🛡️ **Private Key Security** - Use dedicated wallet for testing, rotate keys regularly
 - ✅ **Read-only Operations** - Agent only reads blockchain data, doesn't execute transactions
 - ✅ **Transfer preparation only** - No actual transaction execution
 - ✅ **User wallet addresses** stored in memory only
-- ✅ **Professional Framework** - Built on Spoon AI SDK
-- 🛡️ **Best Practices** - Use dedicated wallet for testing, rotate keys regularly
+- 🔒 **Config File Clean** - No secrets in config.json, only configuration parameters
 
 ## Configuration
 
@@ -100,22 +104,28 @@ Additional tools can be added via the Spoon AI SDK's built-in tool system or MCP
 ## Im
 portant Security Setup
 
-### Private Key Configuration
+### 🚨 CRITICAL SECURITY SETUP
 
-The Spoon AI SDK requires a private key for blockchain operations. Follow these security practices:
+**NEVER put API keys or private keys in config files!** All secrets must be in environment variables only.
 
 1. **Create a dedicated wallet** for this agent (don't use your main wallet)
 2. **Fund it minimally** - only enough ETH for gas if needed
-3. **Never commit private keys** to version control
-4. **Use environment variables** only
+3. **Use .env file only** - Never commit secrets to version control
+4. **Check .gitignore** - Ensure .env is excluded from git
 
 ```bash
-# Generate a new wallet for testing
-# You can use MetaMask, MyEtherWallet, or any wallet generator
-# Copy the private key (without 0x prefix) to your .env file
-
+# In your .env file only:
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_token
+OPENAI_API_KEY=your_openrouter_key
 PRIVATE_KEY=your_64_character_private_key_here
+RPC_URL=https://eth.llamarpc.com
+CHAINBASE_API_KEY=demo
+CHAIN_ID=84532
 ```
+
+**✅ SAFE:** Environment variables in .env file
+**❌ DANGEROUS:** API keys in config.json or source code
 
 ### Environment Variables Priority
 

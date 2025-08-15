@@ -1,11 +1,7 @@
 {
-  "api_keys": {
-    "openai": "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"
-  },
   "default_agent": "defi_whatsapp_agent",
   "providers": {
     "openai": {
-      "api_key": "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",
       "model": "anthropic/claude-3-haiku",
       "max_tokens": 1000,
       "temperature": 0.3,
@@ -37,11 +33,6 @@
           "type": "builtin",
           "description": "Get current token prices",
           "enabled": true,
-          "env": {
-            "RPC_URL": "https://eth.llamarpc.com",
-            "PRIVATE_KEY": "your-wallet-private-key-here",
-            "CHAIN_ID": "1"
-          },
           "config": {
             "timeout": 30,
             "max_retries": 3
@@ -52,12 +43,6 @@
           "type": "builtin", 
           "description": "Get account balance information",
           "enabled": true,
-          "env": {
-            "CHAINBASE_API_KEY": "demo",
-            "RPC_URL": "https://eth.llamarpc.com",
-            "PRIVATE_KEY": "your-wallet-private-key-here",
-            "CHAIN_ID": "1"
-          },
           "config": {
             "timeout": 30,
             "max_retries": 3
@@ -68,11 +53,6 @@
           "type": "builtin",
           "description": "Get 24-hour trading statistics",
           "enabled": true,
-          "env": {
-            "RPC_URL": "https://eth.llamarpc.com",
-            "PRIVATE_KEY": "your-wallet-private-key-here",
-            "CHAIN_ID": "1"
-          },
           "config": {
             "timeout": 30,
             "max_retries": 3
