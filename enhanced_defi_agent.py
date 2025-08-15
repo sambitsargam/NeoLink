@@ -499,130 +499,13 @@ What would you like to explore first? 😄"""
         else:
             return "🩸 Major correction! Perfect buying opportunity? 🤔"
         
-        # Intent patterns for smart message parsing
-        self.intent_patterns = {
-            'wallet_address': {
-                'patterns': [r'^0x[a-fA-F0-9]{40}$'],
-                'description': 'Ethereum wallet address'
-            },
-            'balance_check': {
-                'keywords': [
-                    'balance', 'check', 'how much', 'amount', 'funds', 'money',
-                    'wallet', 'account', 'holdings', 'assets', 'portfolio',
-                    'show me', 'tell me', 'what do i have', 'my tokens',
-                    'eth balance', 'usdc balance', 'token balance'
-                ],
-                'tokens': ['eth', 'ethereum', 'usdc', 'usdt', 'dai'],
-                'description': 'Check token balances'
-            },
-            'price_check': {
-                'keywords': [
-                    'price', 'cost', 'value', 'worth', 'rate', 'exchange rate',
-                    'how much is', 'current price', 'market price', 'trading at',
-                    'quote', 'valuation', 'market cap', 'usd', 'dollar',
-                    'doing', 'performance', 'chart'
-                ],
-                'tokens': [
-                    'eth', 'ethereum', 'usdc', 'usdt', 'dai', 'bitcoin', 'btc',
-                    'algo', 'algorand', 'ada', 'cardano', 'dot', 'polkadot',
-                    'sol', 'solana', 'matic', 'polygon', 'avax', 'avalanche',
-                    'link', 'chainlink', 'uni', 'uniswap', 'aave', 'comp',
-                    'mkr', 'maker', 'crv', 'curve', 'snx', 'synthetix',
-                    'bnb', 'binance', 'xrp', 'ripple', 'doge', 'dogecoin',
-                    'shib', 'shiba', 'ltc', 'litecoin', 'bch', 'bitcoin cash',
-                    'etc', 'ethereum classic', 'fil', 'filecoin', 'atom', 'cosmos'
-                ],
-                'description': 'Check token prices'
-            },
-            'gas_fees': {
-                'keywords': [
-                    'gas', 'fee', 'fees', 'cost', 'expensive', 'cheap',
-                    'transaction cost', 'network fee', 'gwei', 'gas price',
-                    'how much to send', 'transaction fee'
-                ],
-                'description': 'Gas fees and transaction costs'
-            },
-            'defi_education': {
-                'keywords': [
-                    'defi', 'decentralized finance', 'what is', 'explain',
-                    'learn', 'understand', 'how does', 'tell me about',
-                    'uniswap', 'aave', 'compound', 'makerdao', 'curve',
-                    'yield farming', 'liquidity', 'staking', 'lending',
-                    'borrowing', 'dex', 'amm', 'smart contract', 'blockchain',
-                    'more about', 'teach me', 'info', 'information'
-                ],
-                'description': 'DeFi information and education'
-            },
-            'greeting': {
-                'keywords': [
-                    'hello', 'hi', 'hey', 'good morning', 'good afternoon',
-                    'good evening', 'greetings', 'howdy', 'sup', 'yo',
-                    'new to crypto', 'getting started', 'help me start'
-                ],
-                'description': 'Greetings and introductions'
-            }
-        }
+        # Store user data for context
+        self.user_wallets = {}
 
     def is_wallet_address(self, message: str) -> bool:
         """Check if message contains an Ethereum wallet address"""
         eth_address_pattern = r'^0x[a-fA-F0-9]{40}$'
         return bool(re.match(eth_address_pattern, message.strip()))
-
-    def extract_intent_and_tokens(self, message: str) -> tuple:
-        """Extract intent and relevant tokens from message with comprehensive token detection"""
-        message_lower = message.lower().strip()
-        
-        # Check for wallet address first
-        if self.is_wallet_address(message):
-            return 'wallet_address', {'address': message.strip()}
-        
-        # Special prioritized checks for specific intents
-        if any(word in message_lower for word in ['gas fee', 'gas fees', 'gas price', 'gwei', 'network fee', 'transaction cost']):
-            return 'gas_fees', {}
-        
-        # Score each intent based on keyword matches
-        intent_scores = {}
-        extracted_data = {}
-        
-        # First, try to extract any token symbol from the message
-        detected_token = self.extract_token_symbol(message_lower)
-        if detected_token:
-            extracted_data['token'] = detected_token
-        
-        for intent, config in self.intent_patterns.items():
-            score = 0
-            
-            # Check keywords
-            if 'keywords' in config:
-                for keyword in config['keywords']:
-                    if keyword in message_lower:
-                        score += 1
-                        
-                        # Give extra weight to more specific keywords
-                        if intent == 'gas_fees' and keyword in ['gas', 'gwei', 'gas price']:
-                            score += 2
-                        elif intent == 'price_check' and keyword in ['price', 'cost', 'worth']:
-                            score += 1
-                        elif intent == 'balance_check' and keyword in ['balance', 'check balance']:
-                            score += 1
-                        
-            # Check token mentions - give higher score if token detected
-            if 'tokens' in config and detected_token:
-                score += 3  # Higher weight for token mentions
-            
-            if score > 0:
-                intent_scores[intent] = score
-        
-        # Return highest scoring intent
-        if intent_scores:
-            best_intent = max(intent_scores, key=intent_scores.get)
-            return best_intent, extracted_data
-        
-        # If no specific intent found, check if it's a token price query by default
-        if detected_token:
-            return 'price_check', extracted_data
-            
-        return 'general', extracted_data
 
     def extract_token_symbol(self, message: str) -> str:
         """Extract token symbol from message using comprehensive mapping"""
@@ -1059,84 +942,59 @@ I'm also here to help with:
 What's on your mind? I promise to keep it fun and easy to understand! 😊"""
 
     async def process_whatsapp_message(self, user_phone: str, message: str) -> str:
-        """Process WhatsApp message with intelligent intent detection and OpenRouter fallback"""
+        """Process WhatsApp message using Spoon AI with specific crypto handling"""
         try:
             logger.info(f"Processing message from {user_phone}: {message}")
             
-            # Extract intent and data from message
-            intent, data = self.extract_intent_and_tokens(message)
-            logger.info(f"Extracted intent: {intent}, data: {data}")
+            # Check for wallet address first
+            if self.is_wallet_address(message):
+                response = self.save_user_wallet(user_phone, message.strip())
+                logger.info(f"Wallet address response generated")
+                return response
             
             # Get user's wallet if they have one saved
             user_wallet = self.get_user_wallet(user_phone)
             logger.info(f"User wallet: {user_wallet[:10] + '...' if user_wallet else 'None'}")
             
-            # Handle specific intents with real data
-            if intent == 'wallet_address':
-                response = self.save_user_wallet(user_phone, data['address'])
-                logger.info(f"Wallet address response generated")
-                return response
+            # Check for specific crypto actions we can handle directly
+            message_lower = message.lower().strip()
             
-            elif intent == 'balance_check':
-                if not user_wallet:
-                    response = """I don't have your wallet address yet! 💳 
-
-Send me your Ethereum wallet address (starts with 0x) and I'll check your real balance from the blockchain! 
-
-I'll keep it safe and secure - just between us! 🔒😊"""
-                    logger.info(f"No wallet response generated")
-                    return response
-                
-                token = data.get('token', 'ETH')
-                response = await self.check_real_balance(user_wallet, token)
-                logger.info(f"Balance check response generated")
-                return response
-            
-            elif intent == 'price_check':
-                token = data.get('token', 'ETH')
+            # Handle price requests
+            token = self.extract_token_symbol(message_lower)
+            if token and any(word in message_lower for word in ['price', 'cost', 'worth', 'value', 'trading', 'market']):
                 response = await self.get_real_price(token)
                 logger.info(f"Price check response generated for {token}")
                 return response
             
-            elif intent == 'gas_fees':
+            # Handle gas fee requests
+            if any(word in message_lower for word in ['gas fee', 'gas fees', 'gas price', 'gwei', 'network fee']):
                 response = await self.get_real_gas_info()
                 logger.info(f"Gas fees response generated")
                 return response
             
-            elif intent == 'defi_education':
-                response = self.get_defi_education(message)
-                logger.info(f"DeFi education response generated")
+            # Handle balance requests
+            if user_wallet and any(word in message_lower for word in ['balance', 'check balance', 'my balance', 'wallet balance']):
+                token_for_balance = token if token else 'ETH'
+                response = await self.check_real_balance(user_wallet, token_for_balance)
+                logger.info(f"Balance check response generated")
+                return response
+            elif any(word in message_lower for word in ['balance', 'check balance', 'my balance', 'wallet balance']):
+                response = """I don't have your wallet address yet! 💳 
+
+Send me your Ethereum wallet address (starts with 0x) and I'll check your real balance from the blockchain! 
+
+I'll keep it safe and secure - just between us! 🔒�"""
+                logger.info(f"No wallet response generated")
                 return response
             
-            elif intent == 'greeting':
-                wallet_status = f"Connected to {user_wallet[:10]}...{user_wallet[-6:]}" if user_wallet else "No wallet connected yet"
-                response = f"""Hey there! Welcome to the crypto world! 👋😊
-
-I'm your friendly DeFi assistant and I'm here to help you navigate this exciting space! 
-
-**Wallet Status:** {wallet_status}
-
-I can help you with:
-• 💰 Check your real token balances (from the actual blockchain!)
-• 📈 Get live market prices and trends (ALL CHAINS supported!)
-• 🎓 Learn about DeFi, yield farming, NFTs, and more
-• ⛽ Check current gas fees
-• 🔗 **Neo Chain specialist** - Ask about NEO, GAS, FLM tokens!
-• 🤔 Answer any crypto questions you have
-
-{'Want to connect your wallet? Just send me your Ethereum address!' if not user_wallet else 'What would you like to explore today?'} 
-
-Don't worry, I'll explain everything in simple terms! 😄"""
-                logger.info(f"Greeting response generated")
-                return response
+            # For all other messages, use Spoon AI's natural conversation with enhanced context
+            context = self.build_enhanced_context(user_wallet, {'token': token} if token else {}, message)
+            logger.info(f"Using Spoon AI for conversation, context: {context[:100]}...")
             
-            else:
-                # Always use OpenRouter for general conversation with enhanced context
-                context = self.build_enhanced_context(user_wallet, data, message)
-                logger.info(f"Using OpenRouter for general conversation, context: {context[:100]}...")
-                response = await self.get_ai_response(message, context)
-                logger.info(f"OpenRouter response generated: {response[:50]}...")
-                return response
+            # Use OpenRouter as LLM backend through Spoon AI
+            response = await self.get_ai_response(message, context)
+            logger.info(f"AI response generated: {response[:50]}...")
+            return response
                 
         except Exception as e:
             logger.error(f"Error processing message: {str(e)}")
