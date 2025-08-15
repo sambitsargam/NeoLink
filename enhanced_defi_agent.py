@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-NeoLink DeFi WhatsApp Agent - Main Agent Module
-Enhanced conversational DeFi assistant with real blockchain data and natural AI responses
+NeoLink DeFi WhatsApp Agent - Spoon AI Implementation
+Enhanced conversational DeFi assistant with Spoon AI SDK integration
 """
 
 import os
@@ -16,6 +16,9 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 from web3 import Web3
 from dotenv import load_dotenv
+
+# Spoon AI SDK imports
+from spoon_ai.agents.spoon_react_mcp import SpoonReactMCP
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -293,12 +296,208 @@ class RealDataService:
             }
             return {'safe': 15, 'standard': 20, 'fast': 25}
 
-class ConversationalDeFiAgent:
-    """Enhanced conversational DeFi agent with real data"""
+class NeoLinkSpoonAgent(SpoonReactMCP):
+    """Enhanced DeFi agent using Spoon AI SDK with Neo Chain focus"""
     
     def __init__(self):
-        self.openai_api_key = os.getenv('OPENAI_API_KEY')
+        # Initialize SpoonReactMCP with OpenRouter configuration
+        super().__init__(
+            llm_client="openrouter",
+            model="anthropic/claude-3-haiku", 
+            api_key=os.getenv('OPENROUTER_API_KEY'),
+            system_prompt="""You are a friendly, enthusiastic crypto and DeFi expert specializing in Neo blockchain and multi-chain DeFi. 
+
+Your personality:
+- Conversational and warm, like chatting with a friend ☕
+- Use emojis naturally to make responses engaging 😊  
+- Explain complex concepts in simple terms
+- Always enthusiastic about crypto but honest about risks
+- Keep responses under 250 words for WhatsApp
+- Focus on Neo ecosystem when relevant 
+- Support all major blockchains and tokens
+
+For price queries, extract the token symbol and provide accurate analysis.
+For educational queries, provide helpful explanations.
+Never ask for private keys or sensitive information.
+
+When users mention token prices like "Algo price", "NEO price", "ETH price", etc., 
+focus on that specific token and provide current market data."""
+        )
+        
         self.data_service = RealDataService()
+        self.user_wallets = {}  # Store user wallet addresses
+    
+    async def process_whatsapp_message(self, user_phone: str, message: str) -> str:
+        """Process WhatsApp message using Spoon AI with enhanced crypto context"""
+        try:
+            logger.info(f"Processing message from {user_phone}: {message}")
+            
+            # Check if user is sending a wallet address
+            if re.match(r'^0x[a-fA-F0-9]{40}$', message.strip()):
+                return await self._handle_wallet_address(user_phone, message.strip())
+            
+            # Extract token symbols for price queries
+            token_context = self._extract_token_context(message)
+            
+            # Get user context
+            user_wallet = self.user_wallets.get(user_phone)
+            context_parts = []
+            
+            if user_wallet:
+                context_parts.append(f"User wallet: {user_wallet[:10]}...{user_wallet[-6:]}")
+            else:
+                context_parts.append("User has no wallet connected")
+            
+            if token_context:
+                context_parts.append(f"User is asking about: {token_context}")
+                
+                # Handle direct price queries with real data
+                if any(word in message.lower() for word in ['price', 'cost', 'worth', 'value']):
+                    return await self._get_token_price_response(token_context)
+            
+            # Handle gas fee queries
+            if any(word in message.lower() for word in ['gas', 'fees', 'gwei', 'transaction cost']):
+                return await self._get_gas_fees_response()
+            
+            context = " | ".join(context_parts)
+            
+            # Use Spoon AI to process the message with context
+            enhanced_message = f"Context: {context}\n\nUser message: {message}"
+            response = await self.run(user_input=enhanced_message)
+            
+            logger.info(f"Spoon AI response generated: {response[:100]}...")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error processing message with Spoon AI: {str(e)}")
+            return "Oops! Something went wrong on my end. Could you try that again? I promise I'm usually more reliable than this! 😅"
+
+    def _extract_token_context(self, message: str) -> str:
+        """Extract token symbols from message"""
+        message_lower = message.lower().strip()
+        
+        crypto_tokens = {
+            'algo': 'ALGO', 'algorand': 'ALGO',
+            'neo': 'NEO', 'gas': 'GAS', 'nneo': 'NNEO',
+            'eth': 'ETH', 'ethereum': 'ETH',
+            'btc': 'BTC', 'bitcoin': 'BTC', 
+            'ada': 'ADA', 'cardano': 'ADA',
+            'dot': 'DOT', 'polkadot': 'DOT',
+            'sol': 'SOL', 'solana': 'SOL',
+            'matic': 'MATIC', 'polygon': 'MATIC',
+            'avax': 'AVAX', 'avalanche': 'AVAX',
+            'link': 'LINK', 'chainlink': 'LINK',
+            'uni': 'UNI', 'uniswap': 'UNI',
+            'aave': 'AAVE', 'comp': 'COMP',
+            'mkr': 'MKR', 'maker': 'MKR',
+            'crv': 'CRV', 'curve': 'CRV',
+            'bnb': 'BNB', 'binance': 'BNB',
+            'xrp': 'XRP', 'ripple': 'XRP',
+            'doge': 'DOGE', 'dogecoin': 'DOGE',
+            'shib': 'SHIB', 'shiba': 'SHIB'
+        }
+        
+        for token_name, symbol in crypto_tokens.items():
+            if token_name in message_lower:
+                return symbol
+        
+        return None
+
+    async def _get_token_price_response(self, token_symbol: str) -> str:
+        """Get real token price with enthusiastic response"""
+        try:
+            price_data = await self.data_service.get_token_price(token_symbol)
+            
+            if not price_data:
+                return f"❌ Couldn't find price data for {token_symbol}. Could you check the symbol? I support most major cryptocurrencies including Neo ecosystem tokens! 🔍"
+
+            price = price_data['price']
+            change_24h = price_data['change_24h']
+            change_emoji = "📈" if change_24h > 0 else "📉"
+            
+            if price > 1000:
+                price_str = f"${price:,.2f}"
+            elif price > 1:
+                price_str = f"${price:.4f}"
+            else:
+                price_str = f"${price:.8f}".rstrip('0').rstrip('.')
+
+            sentiment = self._get_price_sentiment(change_24h)
+
+            return f"""🔥 **{token_symbol} Price Update** 🔥
+
+💰 **Current Price:** {price_str}
+{change_emoji} **24h Change:** {change_24h:+.2f}%
+
+{sentiment}
+
+Want to check another token or need help with anything else? 😊"""
+        
+        except Exception as e:
+            logger.error(f"Error getting price for {token_symbol}: {e}")
+            return f"Oops! Having trouble getting {token_symbol} price right now. The APIs might be busy. Try again in a moment! 😅"
+
+    async def _get_gas_fees_response(self) -> str:
+        """Get gas fees with conversational response"""
+        try:
+            gas_data = await self.data_service.get_gas_price()
+            
+            return f"""⛽ **Current Gas Fees** ⛽
+
+🟢 **Safe:** {gas_data['safe']} Gwei
+🟡 **Standard:** {gas_data['standard']} Gwei  
+🔴 **Fast:** {gas_data['fast']} Gwei
+
+💡 **Pro Tips:**
+• Use Safe for non-urgent transactions
+• Weekends are usually cheaper! 📅
+• Try Layer 2 solutions like Polygon for way lower fees 🌉
+
+Gas updates constantly - if it's too high, grab a coffee and check back later! ☕😊"""
+            
+        except Exception as e:
+            logger.error(f"Error getting gas fees: {e}")
+            return "Having trouble checking gas fees right now. But between you and me, it's probably expensive! 😅 Maybe try Layer 2 solutions?"
+
+    async def _handle_wallet_address(self, user_phone: str, wallet_address: str) -> str:
+        """Handle wallet address submission"""
+        try:
+            # Validate Ethereum address format
+            if not re.match(r'^0x[a-fA-F0-9]{40}$', wallet_address):
+                return "That doesn't look like a valid Ethereum address! Make sure it starts with 0x and is 42 characters long. 🤔"
+            
+            self.user_wallets[user_phone] = wallet_address
+            
+            return f"""✅ **Wallet Connected!** ✅
+
+Your wallet {wallet_address[:10]}...{wallet_address[-6:]} is now linked! 🔗
+
+I can now help you with:
+• Check your token balances 💰
+• Monitor your portfolio 📊  
+• DeFi strategy advice 🎯
+• Transaction guidance ⚡
+
+What would you like to explore first? 😄"""
+            
+        except Exception as e:
+            logger.error(f"Error handling wallet address: {e}")
+            return "Oops! Had trouble saving your wallet. Could you try again? 😅"
+
+    def _get_price_sentiment(self, change_24h: float) -> str:
+        """Get enthusiastic price sentiment"""
+        if change_24h > 10:
+            return "🚀 TO THE MOON! What a pump! 🌙"
+        elif change_24h > 5:
+            return "📈 Nice gains! The bulls are running!"  
+        elif change_24h > 0:
+            return "💚 Green candles! Slow and steady!"
+        elif change_24h > -5:
+            return "😐 Just a little dip, nothing major!"
+        elif change_24h > -10:
+            return "📉 Ouch, red day. But we hodl! 💎🙌"
+        else:
+            return "🩸 Major correction! Perfect buying opportunity? 🤔"
         
         # Intent patterns for smart message parsing
         self.intent_patterns = {
@@ -970,13 +1169,13 @@ Don't worry, I'll explain everything in simple terms! 😄"""
         return " | ".join(context_parts)
 
 async def create_enhanced_agent():
-    """Create and initialize the enhanced conversational DeFi agent"""
+    """Create and initialize the NeoLink Spoon AI agent"""
     try:
-        agent = ConversationalDeFiAgent()
-        logger.info("Enhanced conversational DeFi agent created successfully")
+        agent = NeoLinkSpoonAgent()
+        logger.info("NeoLink Spoon AI agent created successfully")
         return agent
     except Exception as e:
-        logger.error(f"Error creating agent: {str(e)}")
+        logger.error(f"Error creating Spoon AI agent: {str(e)}")
         raise
 
 # Test function
