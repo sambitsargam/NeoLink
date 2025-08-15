@@ -4,3 +4,8 @@ twilio
 requests
 python-dotenv
 web3
+aiohttp
+asyncio
+ccxt
+asyncio
+logging

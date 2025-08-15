@@ -1,13 +1,15 @@
-# DeFi WhatsApp Agent
+# NeoLink - Enhanced DeFi WhatsApp Agent
 
-A Python-based DeFi agent built with **Spoon AI SDK** that integrates with WhatsApp via Twilio and uses OpenRouter for AI-powered responses.
+A conversational WhatsApp bot that provides real-time DeFi data and education through natural AI-powered conversations. Built with Spoon AI framework and integrated with live blockchain APIs.
 
 ## Features
 
-- 🥄 **Spoon AI SDK** - Professional agent framework with built-in tools
-- 📱 **WhatsApp Integration** - Twilio webhook for messaging
-- 🔗 **Ethereum Blockchain** - Balance checks and transfer preparation  
-- 🧠 **AI-Powered** - OpenRouter integration via OpenAI compatibility
+� **Conversational AI**: Natural, friendly conversations powered by OpenRouter's Claude-3-Haiku
+📊 **Real Market Data**: Live cryptocurrency prices from CoinGecko API
+⛽ **Gas Tracker**: Real-time Ethereum gas fees from Etherscan
+🔗 **Blockchain Integration**: Live balance checking with Web3.py
+📱 **WhatsApp Native**: Seamless integration with Twilio WhatsApp Business API
+🎓 **DeFi Education**: Educational content and explanations for DeFi concepts
 - 💾 **Memory** - User wallet storage
 - 🛡️ **Security First** - Read-only operations, no private key handling
 
