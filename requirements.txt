@@ -1,0 +1,6 @@
+spoon-ai-sdk
+flask
+twilio
+requests
+python-dotenv
+web3
